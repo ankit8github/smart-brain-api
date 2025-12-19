@@ -7,7 +7,7 @@ const knex  = require('knex');
 const fetch = require('node-fetch');
 const Clarifai = require('clarifai');
 
-
+const isProduction = process.env.NODE_ENV === 'production';
 const db  = knex({
   client: 'pg',
   connection: {
@@ -16,14 +16,15 @@ const db  = knex({
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_DATABASE,
-  },
+    ssl: isProduction ? { rejectUnauthorized: false } : false,
+  }
 });
 
 const app = express();
 app.use(express.json());
 app.use(cors());
-app.use(express.json()); // ✅ parse JSON bodies
-app.use(express.urlencoded({ extended: true }));//✅ parse form bodies if coming from HTML forms
+app.use(express.json()); //parse JSON bodies
+app.use(express.urlencoded({ extended: true }));//parse form bodies if coming from HTML forms
 
 db.select('*').from('users').then(data => {
   console.log(data);
@@ -141,6 +142,9 @@ app.put('/image', (req, res) => {
       }
     })
     .catch(err => res.status(400).json('error updating entries'));
+});
+app.get('/', (req, res) => {
+    res.send('Your API server is running successfully!');
 });
 
 //final calling the app to listen the server
